@@ -1,4 +1,4 @@
-# B2B Invoice Management System
+# B2B Invoice Management Platform
 
 A web-based B2B Invoice Management System built using Spring Boot, Spring Security, JWT Authentication, PostgreSQL, and JPA.
 
