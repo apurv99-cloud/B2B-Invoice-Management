@@ -1,5 +1,6 @@
 package com.example.demo.Controllers;
 
+import com.example.demo.Dto.PaymentRequest;
 import com.example.demo.Dto.RejectInvoiceRequest;
 import com.example.demo.Dto.ReviewerInvoiceResponse;
 import com.example.demo.Models.Invoice;
@@ -57,6 +58,21 @@ public class ReviewerController {
                 id,
                 authentication.getName(),
                 request.getReason()
+        );
+    }
+
+    @PutMapping("/invoices/{id}/pay")
+    @PreAuthorize("hasRole('REVIEWER')")
+    public Invoice markAsPaid(
+            @PathVariable Long id,
+            @Valid @RequestBody PaymentRequest request,
+            Authentication authentication
+    ) {
+
+        return invoiceService.markAsPaid(
+                id,
+                authentication.getName(),
+                request.getPaymentReference()
         );
     }
 }

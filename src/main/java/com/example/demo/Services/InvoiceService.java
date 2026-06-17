@@ -3,17 +3,16 @@ package com.example.demo.Services;
 import com.example.demo.Dto.CreateInvoiceRequest;
 import com.example.demo.Dto.InvoiceResponse;
 import com.example.demo.Dto.ReviewerInvoiceResponse;
-import com.example.demo.Models.Invoice;
-import com.example.demo.Models.InvoiceRejection;
-import com.example.demo.Models.InvoiceStatus;
-import com.example.demo.Models.User;
+import com.example.demo.Models.*;
 import com.example.demo.Repository.InvoiceRejectionRepository;
 import com.example.demo.Repository.InvoiceRepository;
+import com.example.demo.Repository.PaymentRepository;
 import com.example.demo.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +22,7 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final UserRepository userRepository;
     private final InvoiceRejectionRepository invoiceRejectionRepository;
+    private final PaymentRepository paymentRepository;
 
     public Invoice createInvoice(CreateInvoiceRequest request, String email) {
 
@@ -86,6 +86,44 @@ public class InvoiceService {
         invoice.setRejection(rejection);
 
         invoiceRejectionRepository.save(rejection);
+
+        return invoiceRepository.save(invoice);
+    }
+
+    public Invoice markAsPaid(
+            Long invoiceId,
+            String userEmail,
+            String paymentReference
+    ) {
+
+        Invoice invoice = invoiceRepository
+                .findById(invoiceId)
+                .orElseThrow(() ->
+                        new RuntimeException("Invoice not found"));
+
+        if (invoice.getStatus() != InvoiceStatus.APPROVED) {
+
+            throw new RuntimeException(
+                    "Only approved invoices can be marked as paid"
+            );
+        }
+
+        User paidBy = userRepository
+                .findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Payment payment = Payment.builder()
+                .invoice(invoice)
+                .paymentDate(LocalDate.now())
+                .paymentReference(paymentReference)
+                .paidBy(paidBy)
+                .build();
+
+        paymentRepository.save(payment);
+
+        invoice.setPayment(payment);
+        invoice.setStatus(InvoiceStatus.PAID);
 
         return invoiceRepository.save(invoice);
     }
